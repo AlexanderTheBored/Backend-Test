@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Manga Reader</title>
+  <style>
+    body {
+      background-color: #121212;
+      color: white;
+      margin: 0;
+      font-family: sans-serif;
+    }
+    .reader-header {
+      padding: 1rem;
+      text-align: center;
+      background-color: #1e1e1e;
+    }
+    .reader-container {
+      max-width: 1000px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .reader-container img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+    .nav-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #1e1e1e;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .nav-bar select, .nav-bar button {
+      background: #2a2a2a;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .nav-bar select:focus, .nav-bar button:focus {
+      outline: 2px solid #555;
+    }
+  </style>
+</head>
+<body>
+  <header class="reader-header">
+    <h1 id="manga-title">Loading...</h1>
+  </header>
+
+  <main class="reader-container" id="reader-container">
+    <div id="chapter-nav-top" class="nav-bar"></div>
+    <div id="reader"><p>Loading chapter...</p></div>
+    <div id="chapter-nav-bottom" class="nav-bar"></div>
+  </main>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const slug = params.get('slug');
+    const chapter = parseInt(params.get('chapter') || '1');
+
+    fetch('./data/manga.json')
+      .then(res => res.json())
+      .then(mangaList => {
+        const manga = mangaList.find(m => m.slug === slug);
+        if (!manga) throw new Error('Manga not found for slug: ' + slug);
+
+        const totalChapters = manga.chapters;
+        document.getElementById('manga-title').textContent = `${manga.title} – Chapter ${chapter}`;
+
+        const sanitizedTitle = manga.title
+          .replace(/[^\w\s-]/g, '')
+          .replace(/\s+/g, ' ')
+          .trim()
+          .replace(/ /g, '_');
+
+        const basePath = `./assets/manga/${sanitizedTitle}/ch-${chapter}/`;
+        const reader = document.getElementById('reader');
+        reader.innerHTML = '';
+
+        let i = 1;
+        let failedCount = 0;
+        const maxConsecutiveFails = 5;
+
+        function tryLoadNext() {
+          const padded = i.toString().padStart(3, '0');
+          const tryExtensions = ['png', 'jpg'];
+          let extIndex = 0;
+
+          function tryImage() {
+            if (extIndex >= tryExtensions.length) {
+              failedCount++;
+              console.warn(`Page-${padded} not found in any format.`);
+              if (failedCount < maxConsecutiveFails) {
+                i++;
+                tryLoadNext();
+              } else if (i === 1) {
+                reader.innerHTML = `<p style="text-align:center; color: #ccc;">No pages found in this chapter.</p>`;
+              }
+              return;
+            }
+
+            const ext = tryExtensions[extIndex];
+            const img = document.createElement('img');
+            img.src = `${basePath}page-${padded}.${ext}`;
+            img.onload = () => {
+              reader.appendChild(img);
+              failedCount = 0;
+              i++;
+              tryLoadNext();
+            };
+            img.onerror = () => {
+              console.warn(`Failed to load: ${img.src}`);
+              extIndex++;
+              tryImage();
+            };
+          }
+
+          tryImage();
+        }
+
+        function buildChapterNav(containerId) {
+          const container = document.getElementById(containerId);
+          container.innerHTML = '';
+
+          const prevBtn = document.createElement('button');
+          prevBtn.textContent = '← Previous';
+          prevBtn.disabled = chapter <= 1;
+          prevBtn.onclick = () => {
+            window.location.href = `mangareader.html?slug=${slug}&chapter=${chapter - 1}`;
+          };
+
+          const nextBtn = document.createElement('button');
+          nextBtn.textContent = 'Next →';
+          nextBtn.disabled = chapter >= totalChapters;
+          nextBtn.onclick = () => {
+            window.location.href = `mangareader.html?slug=${slug}&chapter=${chapter + 1}`;
+          };
+
+          const select = document.createElement('select');
+          for (let ch = 1; ch <= totalChapters; ch++) {
+            const option = document.createElement('option');
+            option.value = ch;
+            option.textContent = `Chapter ${ch}`;
+            if (ch === chapter) option.selected = true;
+            select.appendChild(option);
+          }
+          select.onchange = () => {
+            const selected = parseInt(select.value);
+            window.location.href = `mangareader.html?slug=${slug}&chapter=${selected}`;
+          };
+
+          container.appendChild(prevBtn);
+          container.appendChild(select);
+          container.appendChild(nextBtn);
+        }
+
+        buildChapterNav('chapter-nav-top');
+        buildChapterNav('chapter-nav-bottom');
+        tryLoadNext();
+      })
+      .catch(err => {
+        document.getElementById('manga-title').textContent = 'Failed to load manga';
+        document.getElementById('reader').innerHTML = `<p>${err.message}</p>`;
+        console.error(err);
+      });
+  </script>
+</body>
+</html>

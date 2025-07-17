@@ -1,0 +1,88 @@
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background-color: #121212;
+  color: white;
+}
+
+.site-header {
+  padding: 2rem 1rem;
+  background-color: #1e1e1e;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.logo-book {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.logo-text {
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.site-header p {
+  color: #aaa;
+  margin-top: 0.5rem;
+  font-size: 1rem;
+}
+
+.book-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 2rem;
+}
+
+/* Fixes + consistency below */
+
+.book-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding-top: 1rem;
+  color: #f3f3f3;
+}
+
+.book-info h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: bold;
+  text-align: center;
+}
+
+.book-info p {
+  margin: 0.3rem 0 0;
+  font-size: 0.85rem;
+  color: #ccc;
+}
+
+/* Optional: if any images are affecting layout */
+.book-cover img {
+  width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  border-radius: 4px;
+  box-shadow: 2px 4px 12px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
+
+.book-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;      /* Center-align cards */
+  align-items: flex-start;      /* Prevent vertical gaps */
+  gap: 2rem;                    /* Even spacing between cards */
+  padding: 2rem;
+}
