@@ -1,0 +1,82 @@
+# MangaView Command Reference
+# ===========================
+# This file lists all useful Node.js CLI commands for manga downloading, metadata generation, and more.
+
+---
+
+1. 📥 Download a single chapter by MangaDex chapter ID
+-------------------------------------------------------
+
+node tools/download-chapter.js <chapter-id>
+
+Example:
+  node tools/download-chapter.js a72e55ee-7a84-4f23-bbf2-b99883b9b8c8
+
+This will:
+  - Fetch metadata and image URLs from MangaDex
+  - Save images into: assets/manga/<title>/ch-<chapter-number>/
+  - Automatically handles naming, hashing, and saving in proper order
+
+---
+
+2. 📚 Batch download *all chapters* of a manga by its MangaDex UUID
+--------------------------------------------------------------------
+
+node tools/batch-download-manga.js <manga-uuid>
+
+Example:
+  node tools/batch-download-manga.js 8f811ac6-182c-4c5c-8cf7-448a22aa3584
+
+This will:
+  - Fetch all English-translated chapters of the manga
+  - Skip any chapters already downloaded (by checking folder existence)
+  - Save them in: assets/manga/<title>/ch-<chapter-number>/
+
+---
+
+3. 🔄 Generate or refresh `manga.json` metadata
+-----------------------------------------------
+
+node tools/generate-manga-json.js
+
+This will:
+  - Scan all folders in assets/manga/
+  - Match them against cover files in assets/covers/
+  - Update `data/manga.json` with metadata (title, slug, chapters, etc.)
+
+---
+
+4. 🧪 Run local development server (if added later)
+---------------------------------------------------
+
+node server.js
+
+This will:
+  - Launch the backend Express server (if implemented)
+  - Useful for testing API endpoints or previewing future frontend integration
+
+---
+
+🗂 Tip: Organize by naming convention
+------------------------------------
+
+Folder structure for downloaded content:
+
+  assets/
+  ├── manga/
+  │   └── <Title>/
+  │       └── ch-<number>/
+  │           ├── page-001.jpg
+  │           ├── page-002.jpg
+  │           └── ...
+  └── covers/
+      └── 000001.jpg  ← Matches entry in manga.json
+
+---
+
+✅ Reminder:
+
+- You must use the **MangaDex UUID** for the manga, and the **chapter ID** for single chapters
+- Use [https://api.mangadex.org/manga] or the MangaDex website/devtools to find these IDs
+- Avoid spaces or special characters in paths and filenames — they're auto-sanitized
+

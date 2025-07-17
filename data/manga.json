@@ -1,0 +1,173 @@
+[
+  {
+    "id": "000001",
+    "uuid": "a1c7c817-4e59-43b7-9365-09675a149a6f",
+    "slug": "a1c7c817-4e59-43b7-b5f7-bb37434bf6b3",
+    "title": "One Piece",
+    "authors": [
+      "Oda Eiichiro"
+    ],
+    "status": "ongoing",
+    "chapters": 1152,
+    "description": "...",
+    "genres": [
+      "Award Winning",
+      "Sci-Fi",
+      "Monsters",
+      "Action",
+      "Animals",
+      "Comedy",
+      "Crime",
+      "Adventure",
+      "Gore",
+      "Drama",
+      "Fantasy",
+      "Supernatural"
+    ],
+    "coverExt": "jpg",
+    "added": "2025-06-26",
+    "lastUpdated": "2025-06-26",
+    "folder": "One_Piece"
+  },
+  {
+    "id": "000002",
+    "uuid": "239d6260-d71f-43b0-afff-074e3619e3de",
+    "slug": "239d6260-d71f-43b0-afff-074e3619e3de",
+    "title": "Bleach",
+    "authors": [
+      "Kubo Tite"
+    ],
+    "status": "completed",
+    "chapters": 269,
+    "description": "...",
+    "genres": [
+      "Award Winning",
+      "Action",
+      "Comedy",
+      "Martial Arts",
+      "Adventure",
+      "Gore",
+      "Drama",
+      "Fantasy",
+      "Supernatural"
+    ],
+    "coverExt": "jpg",
+    "added": "2025-06-26",
+    "lastUpdated": "2025-06-26",
+    "folder": "Bleach"
+  },
+  {
+    "id": "000003",
+    "uuid": "6b1eb93e-473a-4ab3-9922-1a66d2a29a4a",
+    "slug": "6b1eb93e-473a-4ab3-9922-1a66d2a29a4a",
+    "title": "Naruto",
+    "authors": [
+      "Kishimoto Masashi"
+    ],
+    "status": "completed",
+    "chapters": 290,
+    "description": "...",
+    "genres": [
+      "Monsters",
+      "Action",
+      "Ninja",
+      "Comedy",
+      "Martial Arts",
+      "Adventure",
+      "Drama",
+      "Fantasy",
+      "Tragedy"
+    ],
+    "coverExt": "jpg",
+    "added": "2025-06-26",
+    "lastUpdated": "2025-06-26",
+    "folder": "Naruto"
+  },
+  {
+    "id": "000004",
+    "uuid": "8f811ac6-182c-4c5c-8cf7-448a22aa3584",
+    "slug": "8f811ac6-182c-4c5c-8cf7-448a22aa3584",
+    "title": "Tsukkomi-machi no Machino-san",
+    "authors": [
+      "Nichopin"
+    ],
+    "status": "ongoing",
+    "chapters": 1,
+    "description": "...",
+    "genres": [
+      "Romance",
+      "Comedy",
+      "School Life",
+      "Web Comic",
+      "Slice of Life",
+      "Adaptation"
+    ],
+    "coverExt": "jpg",
+    "added": "2025-06-26",
+    "lastUpdated": "2025-06-26",
+    "folder": "Tsukkomi-machi_no_Machino-san"
+  },
+  {
+    "id": "000005",
+    "uuid": "91a2e0c9-cd81-4bf7-b5f7-bb37434bf6b3",
+    "slug": "91a2e0c9-cd81-4bf7-b5f7-bb37434bf6b3",
+    "title": "Houkago, Bokura wa Uchuu ni Madou",
+    "authors": [
+      "Saitou Yuu"
+    ],
+    "status": "ongoing",
+    "chapters": 16,
+    "description": "...",
+    "genres": [
+      "Romance",
+      "Comedy",
+      "School Life",
+      "Slice of Life"
+    ],
+    "coverExt": "jpg",
+    "added": "2025-06-26",
+    "lastUpdated": "2025-06-26",
+    "folder": "Houkago_Bokura_wa_Uchuu_ni_Madou"
+  },
+  {
+    "id": "000006",
+    "uuid": "0be32908-d1b9-4196-9e57-fe70a60c01d6",
+    "slug": "0be32908-d1b9-4196-9e57-fe70a60c01d6",
+    "title": "Seifuku Shojo Miseifuku",
+    "authors": [
+      "Asakura Maru"
+    ],
+    "status": "completed",
+    "chapters": 9,
+    "description": "Ko likes girls. Including his childhood friend from next door Mana, who treats him like a brother. She's popular with the boys because of her physical development… or not! The beginning of a sanctuary of fetishism as Ko conquers the uniformed girl!",
+    "genres": [
+      "Romance",
+      "Comedy",
+      "School Life"
+    ],
+    "coverExt": "jpg",
+    "added": "2025-06-27",
+    "lastUpdated": "2025-06-27"
+  },
+  {
+    "id": "000007",
+    "uuid": "9316b513-7adc-4c1e-9405-fb65ea8570bc",
+    "slug": "9316b513-7adc-4c1e-9405-fb65ea8570bc",
+    "title": "Ochinai Yogore wo Boku wa Nanto Yobeba Yokatta noka",
+    "authors": [
+      "Kuro"
+    ],
+    "status": "ongoing",
+    "chapters": 2,
+    "description": "***The world is filthy...***\nNakayama, a high schooler with an extreme case of germophobia, just wants to enjoy his own peaceful time in a perfectly clean space, away from everyone else. But his quiet life is constantly thrown into chaos by Nishino, the cheerful, albeit messy girl who just so happens to sit next to him.\n*\"Don’t pollute my sanctuary!\"*\n*\"Don’t mess with my alone time!\"*\nDespite his desperate pleas, the madness continues.\nIt’s a chaotic, heart-thumping romcom between a cleanliness-obsessed boy and a carefree high school girl!",
+    "genres": [
+      "Romance",
+      "Comedy",
+      "School Life",
+      "Slice of Life"
+    ],
+    "coverExt": "jpg",
+    "added": "2025-06-27",
+    "lastUpdated": "2025-06-27"
+  }
+]

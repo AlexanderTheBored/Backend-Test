@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MangaView</title>
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="/styles/main.css" />
+  <link rel="stylesheet" href="/components/book-card/book-card.css" />
+  <link rel="stylesheet" href="/components/logo/logo.css" />
+</head>
+<body>
+
+  <!-- Site Header with Animated Logo -->
+  <header class="site-header">
+    <a href="/" class="logo-book" aria-label="MangaView">
+      <div class="book">
+        <div class="left-page"></div>
+        <div class="right-page">
+          <div class="flip-page"></div>
+        </div>
+      </div>
+      <span class="logo-text">MangaView</span>
+    </a>
+    <p>Your personal manga library</p>
+  </header>
+
+  <!-- Main Book Grid -->
+  <main class="book-grid" id="book-grid">
+    <!-- Cards will be inserted here dynamically -->
+  </main>
+
+  <!-- Scripts -->
+  <script src="/components/book-card/book-card.js" defer></script>
+  <script type="module">
+    import { initBookCards, openReader } from '/components/book-card/book-card.js';
+
+    fetch('/data/manga.json')
+      .then(res => res.json())
+      .then(data => {
+        const grid = document.getElementById('book-grid');
+        data.forEach((manga, i) => {
+          const card = document.createElement('div');
+          card.className = 'book-card';
+          card.setAttribute('data-slug', manga.slug);
+          card.setAttribute('data-id', manga.id);
+          card.setAttribute('data-ext', manga.coverExt || 'jpg');
+          card.onclick = () => openReader(manga.slug);
+
+          card.innerHTML = `
+            <div class="book-inner">
+              <div class="book-cover">
+                <img class="manga-cover" alt="${manga.title}" />
+              </div>
+              <div class="book-info">
+                <h3>${manga.title}</h3>
+                <p>By ${manga.authors?.[0] || 'Unknown'}</p>
+              </div>
+            </div>
+          `;
+
+          grid.appendChild(card);
+
+          // Re-apply animation with staggered delay
+          card.style.animation = 'none';
+          requestAnimationFrame(() => {
+            card.style.animation = 'fadeUp 0.6s ease-out forwards';
+            card.style.animationDelay = `${0.1 * (i + 1)}s`;
+          });
+        });
+
+        // Re-initialize 3D tilt + image loading
+        initBookCards();
+      })
+      .catch(err => console.error('❌ Failed to load manga.json:', err));
+  </script>
+</body>
+</html>

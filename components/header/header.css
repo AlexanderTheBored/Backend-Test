@@ -1,0 +1,76 @@
+.site-header {
+  position: relative;
+  padding: 2rem 1rem;
+  text-align: center;
+  background-color: #1e1e1e;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.header-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.site-header .tagline {
+  margin-top: 0.3rem;
+  color: #aaa;
+  font-size: 1rem;
+}
+
+/* Settings Button */
+.settings-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  color: #fff;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.settings-icon {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+
+.site-header {
+  position: relative;
+  padding: 2rem 1rem;
+  text-align: center;
+  background-color: #1e1e1e;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.site-header .tagline {
+  margin-top: 0.3rem;
+  color: #aaa;
+  font-size: 1rem;
+}
+
+.settings-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  color: #fff;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.settings-icon {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
