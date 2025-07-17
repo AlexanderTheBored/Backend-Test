@@ -86,7 +86,7 @@ Book animation test/
 
 ## 📦 Downloading Manga
 
-This project uses **CLI tools** (such as [MangaDex CLI](https://github.com/manga-download/mangadex-downloader) or similar) to download manga chapters and covers.  
+This project uses **CLI tools** to download manga chapters and covers.  
 - Downloaded images should be placed in the appropriate folders under `assets/manga/[folder]/ch-[chapter]/`.
 - Covers should be placed in `assets/covers/` with the correct filename and extension.
 - **See `commands-reference.txt` for command usage and automation tips.**
