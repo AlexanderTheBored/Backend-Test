@@ -114,4 +114,4 @@ This project uses **CLI tools** to download manga chapters and covers.
 ## 📢 Credits
 
 Created by AlexanderTheBored.  
-Inspired by manga reader apps and animated
+Inspired by manga reader apps and anime
