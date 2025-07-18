@@ -9,7 +9,7 @@ if (!link) {
 }
 
 const chapterMatch = link.match(/mangadex\.org\/chapter\/([a-f0-9\-]+)/);
-const mangaMatch = link.match(/mangadex\.org\/title\/([a-f0-9\-]+)/);
+const mangaMatch   = link.match(/mangadex\.org\/title\/([a-f0-9\-]+)/);
 
 if (chapterMatch) {
   const chapterId = chapterMatch[1];
@@ -29,18 +29,42 @@ if (mangaMatch) {
   });
 
   console.log('\nWhat would you like to do?');
-  console.log('[1] Add to manga.json only');
+  console.log('[1] Add to manga.json (and generate chapter folders)');
   console.log('[2] Download all chapters');
-  console.log('[3] Both');
+  console.log('[3] Generate chapter folders only');
+  console.log('[4] Do all: add, download, and generate folders');
 
   readline.question('> ', (choice) => {
-    if (choice === '1' || choice === '3') {
-      console.log(`🗃️ Adding manga to database...`);
-      execSync(`node tools/generate-manga-json.js ${mangaId}`, { stdio: 'inherit' });
-    }
-    if (choice === '2' || choice === '3') {
-      console.log(`⬇️ Starting batch download...`);
-      execSync(`node tools/batch-download-manga.js ${mangaId}`, { stdio: 'inherit' });
+    switch (choice) {
+      case '1':
+        console.log(`🗃️ Adding manga to database...`);
+        execSync(`node tools/generate-manga-json.js ${mangaId}`, { stdio: 'inherit' });
+        console.log(`📂 Generating chapter folders...`);
+        execSync(`node tools/generate-chapter-folders.js ${mangaId}`, { stdio: 'inherit' });
+        break;
+
+      case '2':
+        console.log(`⬇️ Starting batch download...`);
+        execSync(`node tools/batch-download-manga.js ${mangaId}`, { stdio: 'inherit' });
+        break;
+
+      case '3':
+        console.log(`📂 Generating chapter folders...`);
+        execSync(`node tools/generate-chapter-folders.js ${mangaId}`, { stdio: 'inherit' });
+        break;
+
+      case '4':
+        console.log(`🗃️ Adding manga to database...`);
+        execSync(`node tools/generate-manga-json.js ${mangaId}`, { stdio: 'inherit' });
+        console.log(`⬇️ Starting batch download...`);
+        execSync(`node tools/batch-download-manga.js ${mangaId}`, { stdio: 'inherit' });
+        console.log(`📂 Generating chapter folders...`);
+        execSync(`node tools/generate-chapter-folders.js ${mangaId}`, { stdio: 'inherit' });
+        break;
+
+      default:
+        console.error('❌ Invalid choice. Please select 1, 2, 3, or 4.');
+        process.exit(1);
     }
     readline.close();
   });

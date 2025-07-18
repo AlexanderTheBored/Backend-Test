@@ -80,3 +80,76 @@ Folder structure for downloaded content:
 - Use [https://api.mangadex.org/manga] or the MangaDex website/devtools to find these IDs
 - Avoid spaces or special characters in paths and filenames — they're auto-sanitized
 
+---
+
+5. 📂 Generate `chapterFolders` per manga (for merged half-chapter support)
+----------------------------------------------------------------------------
+
+node tools/generate-chapter-folders.js
+
+This will:
+  - Scan `assets/manga/<title>/` for folders like `ch-1`, `ch-1.5`, `ch-2`, etc.
+  - Extract and sort all existing chapters
+  - Inject `"chapterFolders": ["1", "1.5", "2", ...]` into each entry in `data/manga.json`
+  - Keeps `"chapters"` in sync with the folder count
+
+---
+
+🗂 Tip: Organize by naming convention
+------------------------------------
+
+Folder structure for downloaded content:
+
+  assets/
+  ├── manga/
+  │   └── <Title>/
+  │       └── ch-<number>/
+  │           ├── page-001.jpg
+  │           ├── page-002.jpg
+  │           └── ...
+  └── covers/
+      └── 000001.jpg  ← Matches entry in manga.json
+
+---
+
+6. 🔗 Import by MangaDex link (chapter or manga)
+-------------------------------------------------
+
+node tools/mangadex-link.js <mangadex-url>
+
+Examples:
+  node tools/mangadex-link.js https://mangadex.org/chapter/xxxxxxxx-xxxx
+  node tools/mangadex-link.js https://mangadex.org/title/yyyyyyyy-yyyy
+
+This will:
+  - Detect whether the URL is a chapter or manga
+  - If chapter: directly download it
+  - If manga: prompt you to:
+    [1] Add to `manga.json`  
+    [2] Download all chapters  
+    [3] Do both
+
+---
+
+🗂 Tip: Organize by naming convention
+------------------------------------
+
+Folder structure for downloaded content:
+
+  assets/
+  ├── manga/
+  │   └── <Title>/
+  │       └── ch-<number>/
+  │           ├── page-001.jpg
+  │           ├── page-002.jpg
+  │           └── ...
+  └── covers/
+      └── 000001.jpg  ← Matches entry in manga.json
+
+---
+
+✅ Reminder:
+
+- You must use the **MangaDex UUID** for the manga, and the **chapter ID** for single chapters
+- Use [https://api.mangadex.org/manga] or the MangaDex website/devtools to find these IDs
+- Avoid spaces or special characters in paths and filenames — they're auto-sanitized

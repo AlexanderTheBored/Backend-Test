@@ -22,7 +22,13 @@ async function getChapterInfo(chapterId) {
   const json = await res.json();
 
   const mangaId = json.data.relationships.find(r => r.type === 'manga')?.id;
-  const chapter = json.data.attributes.chapter || '0';
+let chapter = json.data.attributes.chapter;
+
+// If missing (like for a oneshot), default to "1"
+if (!chapter || chapter.trim() === '') {
+  chapter = '1';
+}
+
   const title = json.data.attributes.title || `Chapter ${chapter}`;
 
   return { mangaId, chapterNumber: chapter, title };

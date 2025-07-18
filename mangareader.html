@@ -64,116 +64,196 @@
     <div id="chapter-nav-bottom" class="nav-bar"></div>
   </main>
 
-  <script>
-    const params = new URLSearchParams(location.search);
-    const slug = params.get('slug');
-    const chapter = parseInt(params.get('chapter') || '1');
+<script>
+const params = new URLSearchParams(location.search);
+const slug = params.get('slug');
+const chapter = params.get('chapter') || '1';
 
-    fetch('./data/manga.json')
-      .then(res => res.json())
-      .then(mangaList => {
-        const manga = mangaList.find(m => m.slug === slug);
-        if (!manga) throw new Error('Manga not found for slug: ' + slug);
+fetch('./data/manga.json')
+  .then(res => res.json())
+  .then(mangaList => {
+    const manga = mangaList.find(m => m.slug === slug);
+    if (!manga) throw new Error('Manga not found for slug: ' + slug);
 
-        const totalChapters = manga.chapters;
-        document.getElementById('manga-title').textContent = `${manga.title} – Chapter ${chapter}`;
+    const chapterList = manga.chapterFolders?.slice().map(String).sort((a, b) => parseFloat(a) - parseFloat(b));
+    if (!chapterList || chapterList.length === 0) throw new Error('No chapters available');
 
-        const sanitizedTitle = manga.title
-          .replace(/[^\w\s-]/g, '')
-          .replace(/\s+/g, ' ')
-          .trim()
-          .replace(/ /g, '_');
+    function groupChaptersSmart(chapters) {
+      // ensure everything is a string and sort numerically
+      const sorted = chapters
+        .map(c => c.toString())
+        .sort((a, b) => parseFloat(a) - parseFloat(b));
 
-        const basePath = `./assets/manga/${sanitizedTitle}/ch-${chapter}/`;
-        const reader = document.getElementById('reader');
-        reader.innerHTML = '';
+      const groups = [];
+      const used   = new Set();
 
-        let i = 1;
-        let failedCount = 0;
-        const maxConsecutiveFails = 5;
+      for (const ch of sorted) {
+        if (used.has(ch)) continue;
 
-        function tryLoadNext() {
-          const padded = i.toString().padStart(3, '0');
-          const tryExtensions = ['png', 'jpg'];
-          let extIndex = 0;
+        // group all with the same integer floor
+        const base     = Math.floor(parseFloat(ch));
+        const siblings = sorted.filter(c =>
+          Math.floor(parseFloat(c)) === base && !used.has(c)
+        );
 
-          function tryImage() {
-            if (extIndex >= tryExtensions.length) {
-              failedCount++;
-              console.warn(`Page-${padded} not found in any format.`);
-              if (failedCount < maxConsecutiveFails) {
-                i++;
-                tryLoadNext();
-              } else if (i === 1) {
-                reader.innerHTML = `<p style="text-align:center; color: #ccc;">No pages found in this chapter.</p>`;
-              }
-              return;
+        if (siblings.length > 1) {
+          // bundle decimals with their base (even if no “base” chapter)
+          groups.push(siblings);
+          siblings.forEach(c => used.add(c));
+        } else {
+          // standalone chapter
+          groups.push([ch]);
+          used.add(ch);
+        }
+      }
+
+      return groups;
+    }
+
+    const groups = groupChaptersSmart(chapterList);
+
+let currentGroup = null;
+let currentIndex = -1;
+
+const requested  = chapter.toString();
+const reqNum     = parseFloat(requested);
+const isInteger  = Number.isInteger(reqNum);
+
+for (let i = 0; i < groups.length; i++) {
+  const group = groups[i];
+
+  // 1) exact string match
+  // 2) numeric match (e.g. "1.1" vs 1.1)
+  // 3) if user asked for an integer, match any chapter whose floor == that integer
+  if (
+    group.includes(requested) ||
+    group.some(c => parseFloat(c) === reqNum) ||
+    (isInteger && group.some(c => Math.floor(parseFloat(c)) === reqNum))
+  ) {
+    currentGroup = group;
+    currentIndex = i;
+    break;
+  }
+}
+
+    if (!currentGroup) {
+      throw new Error(`Chapter ${chapter} not found in grouped chapters`);
+    }
+
+    const sanitizedTitle = manga.title
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .replace(/ /g, '_');
+
+    document.getElementById('manga-title').textContent = `${manga.title} – Chapter ${currentGroup.join(', ')}`;
+
+    function loadChapterGroup(group) {
+      const reader = document.getElementById('reader');
+      reader.innerHTML = '';
+
+      let groupIndex = 0;
+      let pageIndex = 1;
+      let failCount = 0;
+      const maxFails = 5;
+
+      function tryLoadPage() {
+        if (groupIndex >= group.length) return;
+
+        const folder = `./assets/manga/${sanitizedTitle}/ch-${group[groupIndex]}/`;
+        const padded = pageIndex.toString().padStart(3, '0');
+        const extensions = ['jpg', 'png'];
+        let extIndex = 0;
+
+        function tryImage() {
+          if (extIndex >= extensions.length) {
+            extIndex = 0;
+            failCount++;
+
+            if (failCount >= maxFails) {
+              groupIndex++;
+              pageIndex = 1;
+              failCount = 0;
+            } else {
+              pageIndex++;
             }
 
-            const ext = tryExtensions[extIndex];
-            const img = document.createElement('img');
-            img.src = `${basePath}page-${padded}.${ext}`;
-            img.onload = () => {
-              reader.appendChild(img);
-              failedCount = 0;
-              i++;
-              tryLoadNext();
-            };
-            img.onerror = () => {
-              console.warn(`Failed to load: ${img.src}`);
-              extIndex++;
-              tryImage();
-            };
+            tryLoadPage();
+            return;
           }
 
-          tryImage();
+          const ext = extensions[extIndex];
+          const img = document.createElement('img');
+          img.src = `${folder}page-${padded}.${ext}`;
+          img.onload = () => {
+            reader.appendChild(img);
+            pageIndex++;
+            failCount = 0;
+            tryLoadPage();
+          };
+          img.onerror = () => {
+            extIndex++;
+            tryImage();
+          };
         }
 
-        function buildChapterNav(containerId) {
-          const container = document.getElementById(containerId);
-          container.innerHTML = '';
+        tryImage();
+      }
 
-          const prevBtn = document.createElement('button');
-          prevBtn.textContent = '← Previous';
-          prevBtn.disabled = chapter <= 1;
-          prevBtn.onclick = () => {
-            window.location.href = `mangareader.html?slug=${slug}&chapter=${chapter - 1}`;
-          };
+      tryLoadPage();
+    }
 
-          const nextBtn = document.createElement('button');
-          nextBtn.textContent = 'Next →';
-          nextBtn.disabled = chapter >= totalChapters;
-          nextBtn.onclick = () => {
-            window.location.href = `mangareader.html?slug=${slug}&chapter=${chapter + 1}`;
-          };
+    function buildChapterNav(containerId) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = '';
 
-          const select = document.createElement('select');
-          for (let ch = 1; ch <= totalChapters; ch++) {
-            const option = document.createElement('option');
-            option.value = ch;
-            option.textContent = `Chapter ${ch}`;
-            if (ch === chapter) option.selected = true;
-            select.appendChild(option);
-          }
-          select.onchange = () => {
-            const selected = parseInt(select.value);
-            window.location.href = `mangareader.html?slug=${slug}&chapter=${selected}`;
-          };
+      const prevBtn = document.createElement('button');
+      prevBtn.textContent = '← Previous';
+      prevBtn.disabled = currentIndex <= 0;
+      if (!prevBtn.disabled) {
+        prevBtn.onclick = () => {
+          const prevChapter = groups[currentIndex - 1][0];
+          window.location.href = `mangareader.html?slug=${slug}&chapter=${prevChapter}`;
+        };
+      }
 
-          container.appendChild(prevBtn);
-          container.appendChild(select);
-          container.appendChild(nextBtn);
-        }
+      const nextBtn = document.createElement('button');
+      nextBtn.textContent = 'Next →';
+      nextBtn.disabled = currentIndex >= groups.length - 1;
+      if (!nextBtn.disabled) {
+        nextBtn.onclick = () => {
+          const nextChapter = groups[currentIndex + 1][0];
+          window.location.href = `mangareader.html?slug=${slug}&chapter=${nextChapter}`;
+        };
+      }
 
-        buildChapterNav('chapter-nav-top');
-        buildChapterNav('chapter-nav-bottom');
-        tryLoadNext();
-      })
-      .catch(err => {
-        document.getElementById('manga-title').textContent = 'Failed to load manga';
-        document.getElementById('reader').innerHTML = `<p>${err.message}</p>`;
-        console.error(err);
+      const select = document.createElement('select');
+      groups.forEach((group, i) => {
+        const option = document.createElement('option');
+        option.value = group[0];
+        option.textContent = `Chapter ${group.join(', ')}`;
+        if (i === currentIndex) option.selected = true;
+        select.appendChild(option);
       });
-  </script>
+
+      select.onchange = () => {
+        window.location.href = `mangareader.html?slug=${slug}&chapter=${select.value}`;
+      };
+
+      container.appendChild(prevBtn);
+      container.appendChild(select);
+      container.appendChild(nextBtn);
+    }
+
+    buildChapterNav('chapter-nav-top');
+    buildChapterNav('chapter-nav-bottom');
+    loadChapterGroup(currentGroup);
+  })
+  .catch(err => {
+    document.getElementById('manga-title').textContent = 'Failed to load manga';
+    document.getElementById('reader').innerHTML = `<p>${err.message}</p>`;
+    console.error(err);
+  });
+</script>
 </body>
 </html>
