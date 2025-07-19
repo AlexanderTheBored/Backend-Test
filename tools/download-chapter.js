@@ -3,85 +3,165 @@
 const fs = require('fs');
 const path = require('path');
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
-const { pipeline } = require('stream/promises');
+const readline = require('readline');
 
 const BASE_DIR = path.join(__dirname, '../assets/manga');
 
 function sanitizeTitle(title) {
   return title
-    .replace(/[^\w\s-]/g, '')   // remove special chars
-    .replace(/\s+/g, ' ')       // normalize all whitespace
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, ' ')
     .trim()
-    .replace(/ /g, '_');        // convert to underscores
+    .replace(/ /g, '_');
 }
 
-async function getChapterInfo(chapterId) {
-  const url = `https://api.mangadex.org/chapter/${chapterId}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error('Failed to fetch chapter metadata');
-  const json = await res.json();
-
-  const mangaId = json.data.relationships.find(r => r.type === 'manga')?.id;
-let chapter = json.data.attributes.chapter;
-
-// If missing (like for a oneshot), default to "1"
-if (!chapter || chapter.trim() === '') {
-  chapter = '1';
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-  const title = json.data.attributes.title || `Chapter ${chapter}`;
-
-  return { mangaId, chapterNumber: chapter, title };
-}
-
-async function getAtHomeServer(chapterId) {
-  const url = `https://api.mangadex.org/at-home/server/${chapterId}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error('Failed to fetch at-home server info');
+async function fetchJsonSafe(url, label = '') {
+  const res = await fetch(url, { headers: { 'Accept': 'application/json', 'User-Agent': 'MangaView CLI' } });
+  const ct = res.headers.get('content-type') || '';
+  if (!res.ok || !ct.includes('application/json')) {
+    const text = await res.text();
+    throw new Error(`[${label}] Response error (${res.status}): ${text.slice(0,200)}`);
+  }
   return res.json();
 }
 
-async function getMangaTitle(mangaId) {
-  const url = `https://api.mangadex.org/manga/${mangaId}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error('Failed to fetch manga title');
-  const json = await res.json();
-  return json.data.attributes.title.en || Object.values(json.data.attributes.title)[0];
+function prompt(question) {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  return new Promise(resolve => rl.question(question, ans => { rl.close(); resolve(ans.trim()); }));
 }
 
-async function downloadImage(url, destPath) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Failed to fetch ${url}`);
-  await pipeline(res.body, fs.createWriteStream(destPath));
+// Fetch all chapter entries with scanlation groups
+async function getAllChapterData(mangaId) {
+  const chapters = [];
+  const includedGroups = {};
+  let offset = 0;
+  const limit = 100;
+
+  while (true) {
+    const url = `https://api.mangadex.org/chapter?manga=${mangaId}&translatedLanguage[]=en&order[chapter]=asc&limit=${limit}&offset=${offset}&includes[]=scanlation_group`;
+    const json = await fetchJsonSafe(url, 'getAllChapterData');
+    if (!json.data || !json.data.length) break;
+
+    // collect scanlation group names
+    if (Array.isArray(json.included)) {
+      json.included.forEach(item => {
+        if (item.type === 'scanlation_group' && item.attributes?.name) {
+          includedGroups[item.id] = item.attributes.name;
+        }
+      });
+    }
+
+    // record chapter entries
+    json.data.forEach(ch => {
+      const num = ch.attributes.chapter || '0';
+      const rel = (ch.relationships || []).find(r => r.type === 'scanlation_group');
+      const gid = rel?.id;
+      chapters.push({ id: ch.id, number: num, groupId: gid });
+    });
+
+    offset += limit;
+    if (offset >= (json.total || 0)) break;
+  }
+
+  // fetch missing group names
+  const missing = Array.from(new Set(chapters.map(c => c.groupId).filter(Boolean))).filter(id => !includedGroups[id]);
+  for (const id of missing) {
+    try {
+      const grp = await fetchJsonSafe(`https://api.mangadex.org/group/${id}`, 'getScanlationGroup');
+      includedGroups[id] = grp.data.attributes.name;
+    } catch {
+      includedGroups[id] = 'Unknown';
+    }
+  }
+
+  // enrich entries
+  return chapters.map(c => ({
+    id:        c.id,
+    number:    c.number,
+    groupName: includedGroups[c.groupId] || 'Unknown'
+  }));
 }
 
 (async () => {
-  const chapterId = process.argv[2];
-  if (!chapterId) {
+  const args = process.argv.slice(2);
+  let chapterId;
+
+  if (args.length === 1 && /^[0-9a-fA-F\-]{36}$/.test(args[0])) {
+    // direct chapter ID
+    chapterId = args[0];
+  } else if (args.length === 2) {
+    // manga UUID + chapter number
+    const [mangaUuid, chapNum] = args;
+    const all = await getAllChapterData(mangaUuid);
+    const matches = all.filter(c => parseFloat(c.number) === parseFloat(chapNum));
+    if (!matches.length) {
+      console.error(`❌ Chapter ${chapNum} not found for manga ${mangaUuid}`);
+      process.exit(1);
+    } else if (matches.length === 1) {
+      chapterId = matches[0].id;
+    } else {
+      console.log(`\n🚩 Chapter ${chapNum} available from:`);
+      matches.forEach((c,i) => console.log(` [${i+1}] ${c.groupName}`));
+      console.log(' [a] all\n');
+      const ans = await prompt(`Select scanlator (1-${matches.length} or a): `);
+      let chosen = [];
+      if (ans.toLowerCase() === 'a') {
+        chosen = matches;
+      } else {
+        const idx = parseInt(ans,10) - 1;
+        if (!matches[idx]) { console.error('❌ Invalid choice'); process.exit(1); }
+        chosen = [matches[idx]];
+      }
+      // download all chosen
+      for (const { id } of chosen) {
+        chapterId = id;
+        // fall through to download logic
+      }
+    }
+  } else {
     console.error('Usage: node tools/download-chapter.js <chapter-id>');
+    console.error('   or: node tools/download-chapter.js <manga-uuid> <chapter-number>');
     process.exit(1);
   }
 
   try {
-    const { mangaId, chapterNumber } = await getChapterInfo(chapterId);
-    const { baseUrl, chapter } = await getAtHomeServer(chapterId);
-    const mangaTitle = await getMangaTitle(mangaId);
-    const safeTitle = sanitizeTitle(mangaTitle); // 🔧 consistent folder name
+    // fetch chapter info
+    const meta = await fetchJsonSafe(`https://api.mangadex.org/chapter/${chapterId}`, 'getChapterInfo');
+    const mangaId = meta.data.relationships.find(r=>r.type==='manga')?.id;
+    let chapNum = meta.data.attributes.chapter || '1';
+    const ah = await fetchJsonSafe(`https://api.mangadex.org/at-home/server/${chapterId}`, 'getAtHomeServer');
+    const baseUrl = ah.baseUrl;
+    const hash = ah.chapter.hash;
+    const pages = ah.chapter.data;
 
-    const folderPath = path.join(BASE_DIR, safeTitle, `ch-${chapterNumber}`);
-    fs.mkdirSync(folderPath, { recursive: true });
+    const mjson = await fetchJsonSafe(`https://api.mangadex.org/manga/${mangaId}`, 'getMangaTitle');
+    const mangaTitle = mjson.data.attributes.title.en || Object.values(mjson.data.attributes.title)[0];
+    const safe = sanitizeTitle(mangaTitle);
 
-    const files = chapter.data;
-    for (let i = 0; i < files.length; i++) {
-      const filename = files[i];
-      const url = `${baseUrl}/data/${chapter.hash}/${filename}`;
-      const ext = path.extname(filename);
-      const dest = path.join(folderPath, `page-${String(i + 1).padStart(3, '0')}${ext}`);
-      console.log(`⬇️ Downloading page ${i + 1} to ${dest}`);
-      await downloadImage(url, dest);
+    const folder = path.join(BASE_DIR, safe, `ch-${chapNum}`);
+    fs.mkdirSync(folder, { recursive: true });
+
+    for (let i=0; i<pages.length; i++) {
+      const fn = pages[i];
+      const url = `${baseUrl}/data/${hash}/${fn}`;
+      const ext = path.extname(fn);
+      const dest = path.join(folder, `page-${String(i+1).padStart(3,'0')}${ext}`);
+      console.log(`⬇️ Downloading page ${i+1}`);
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Failed to fetch ${url}`);
+      await new Promise((resolv, reject) => {
+        const w = fs.createWriteStream(dest);
+        res.body.pipe(w);
+        res.body.on('end', resolv);
+        res.body.on('error', reject);
+      });
     }
 
-    console.log(`✅ Download complete: ${files.length} pages saved to ${folderPath}`);
+    console.log(`✅ Downloaded ${pages.length} pages to ${folder}`);
   } catch (err) {
     console.error('❌ Error:', err.message);
   }
