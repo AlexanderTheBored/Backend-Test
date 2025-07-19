@@ -7,7 +7,7 @@ A simple web-based manga library and reader with animated book cards, cover imag
 ## 📁 Project Structure
 
 ```
-Book animation test/
+Backend test/
 │
 ├── index.html
 ├── mangareader.html
