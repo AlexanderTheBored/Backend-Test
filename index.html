@@ -31,49 +31,82 @@
     <!-- Cards will be inserted here dynamically -->
   </main>
 
+<!-- Pagination Controls -->
+<div id="pagination" class="pagination-controls"></div>
+
+
   <!-- Scripts -->
   <script src="/components/book-card/book-card.js" defer></script>
-  <script type="module">
-    import { initBookCards, openReader } from '/components/book-card/book-card.js';
+<script type="module">
+  import { initBookCards, openReader } from '/components/book-card/book-card.js';
 
-    fetch('/data/manga.json')
-      .then(res => res.json())
-      .then(data => {
-        const grid = document.getElementById('book-grid');
-        data.forEach((manga, i) => {
-          const card = document.createElement('div');
-          card.className = 'book-card';
-          card.setAttribute('data-slug', manga.slug);
-          card.setAttribute('data-id', manga.id);
-          card.setAttribute('data-ext', manga.coverExt || 'jpg');
-          card.onclick = () => openReader(manga.slug);
+  fetch('/data/manga.json')
+    .then(res => res.json())
+    .then(data => {
+      const itemsPerPage = 25;
+      const urlParams = new URLSearchParams(window.location.search);
+      const currentPage = parseInt(urlParams.get('page')) || 1;
 
-          card.innerHTML = `
-            <div class="book-inner">
-              <div class="book-cover">
-                <img class="manga-cover" alt="${manga.title}" />
-              </div>
-              <div class="book-info">
-                <h3>${manga.title}</h3>
-                <p>By ${manga.authors?.[0] || 'Unknown'}</p>
-              </div>
+      const start = (currentPage - 1) * itemsPerPage;
+      const end = start + itemsPerPage;
+      const pageItems = data.slice(start, end);
+
+      const grid = document.getElementById('book-grid');
+      grid.innerHTML = '';
+
+      pageItems.forEach((manga, i) => {
+        const card = document.createElement('div');
+        card.className = 'book-card';
+        card.setAttribute('data-slug', manga.slug);
+        card.setAttribute('data-id', manga.id);
+        card.setAttribute('data-ext', manga.coverExt || 'jpg');
+        card.onclick = () => openReader(manga.slug);
+
+        card.innerHTML = `
+          <div class="book-inner">
+            <div class="book-cover">
+              <img class="manga-cover" alt="${manga.title}" />
             </div>
-          `;
+            <div class="book-info">
+              <h3>${manga.title}</h3>
+              <p>By ${manga.authors?.[0] || 'Unknown'}</p>
+            </div>
+          </div>
+        `;
 
-          grid.appendChild(card);
+        grid.appendChild(card);
 
-          // Re-apply animation with staggered delay
-          card.style.animation = 'none';
-          requestAnimationFrame(() => {
-            card.style.animation = 'fadeUp 0.6s ease-out forwards';
-            card.style.animationDelay = `${0.1 * (i + 1)}s`;
-          });
+        // Animation delay
+        card.style.animation = 'none';
+        requestAnimationFrame(() => {
+          card.style.animation = 'fadeUp 0.6s ease-out forwards';
+          card.style.animationDelay = `${0.1 * (i + 1)}s`;
         });
+      });
 
-        // Re-initialize 3D tilt + image loading
-        initBookCards();
-      })
-      .catch(err => console.error('❌ Failed to load manga.json:', err));
-  </script>
+      // Re-initialize 3D tilt + image loading
+      initBookCards();
+
+      // Pagination Controls
+      const totalPages = Math.ceil(data.length / itemsPerPage);
+      const pagination = document.getElementById('pagination');
+      pagination.innerHTML = '';
+
+      if (currentPage > 1) {
+        const prev = document.createElement('a');
+        prev.href = `?page=${currentPage - 1}`;
+        prev.textContent = '← Previous';
+        pagination.appendChild(prev);
+      }
+
+      if (currentPage < totalPages) {
+        const next = document.createElement('a');
+        next.href = `?page=${currentPage + 1}`;
+        next.textContent = 'Next →';
+        pagination.appendChild(next);
+      }
+    })
+    .catch(err => console.error('❌ Failed to load manga.json:', err));
+</script>
 </body>
 </html>

@@ -51,6 +51,10 @@
     .nav-bar select:focus, .nav-bar button:focus {
       outline: 2px solid #555;
     }
+    .nav-bar button:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
   </style>
 </head>
 <body>
@@ -207,25 +211,31 @@ for (let i = 0; i < groups.length; i++) {
       const container = document.getElementById(containerId);
       container.innerHTML = '';
 
-      const prevBtn = document.createElement('button');
-      prevBtn.textContent = '← Previous';
-      prevBtn.disabled = currentIndex <= 0;
-      if (!prevBtn.disabled) {
-        prevBtn.onclick = () => {
-          const prevChapter = groups[currentIndex - 1][0];
-          window.location.href = `mangareader.html?slug=${slug}&chapter=${prevChapter}`;
-        };
-      }
+const prevBtn = document.createElement('button');
+prevBtn.textContent = '← Previous';
+if (currentIndex === 0) {
+  // On the very first chapter, send the user back home
+  prevBtn.onclick = () => window.location.href = 'index.html';
+} else {
+  // Otherwise, navigate to the previous chapter
+  prevBtn.onclick = () => {
+    const prevChapter = groups[currentIndex - 1][0];
+    window.location.href = `mangareader.html?slug=${slug}&chapter=${prevChapter}`;
+  };
+}
 
-      const nextBtn = document.createElement('button');
-      nextBtn.textContent = 'Next →';
-      nextBtn.disabled = currentIndex >= groups.length - 1;
-      if (!nextBtn.disabled) {
-        nextBtn.onclick = () => {
-          const nextChapter = groups[currentIndex + 1][0];
-          window.location.href = `mangareader.html?slug=${slug}&chapter=${nextChapter}`;
-        };
-      }
+const nextBtn = document.createElement('button');
+nextBtn.textContent = 'Next →';
+if (currentIndex >= groups.length - 1) {
+  // On the last chapter, disable “Next”
+  nextBtn.disabled = true;
+} else {
+  // Otherwise, navigate to the next chapter
+  nextBtn.onclick = () => {
+    const nextChapter = groups[currentIndex + 1][0];
+    window.location.href = `mangareader.html?slug=${slug}&chapter=${nextChapter}`;
+  };
+}
 
       const select = document.createElement('select');
       groups.forEach((group, i) => {

@@ -57,7 +57,7 @@ if (currentIndex === pages.length - 1) {
 
 Status:
 --------
-Open – Navigation behavior to be updated in the reader template and script
+Closed – implemented in the reader template. “Previous” now redirects home on the first page; “Next” is visually disabled on the last page.
 
 FEATURE: Add pagination to index view (limit 25 manga per page)
 ---------------------------------------------------------------
@@ -257,3 +257,133 @@ Download all new chapters? (y/n):
 Status:
 --------
 Open – CLI design and implementation pending. May require optional config for group preference and language filtering.
+
+FEATURE: Add Temporary Download Folder for Chapter Updates  
+------------------------------------------------------------
+
+Description:  
+-------------  
+Implement a temporary download directory to stage new chapter pages before moving them into the main `assets/manga/` directory. This ensures that ongoing updates (downloads or syncs) do not interfere with live site usage or trigger page reloads due to incomplete or changing files.
+
+Cause:  
+-------  
+Currently, new chapters are downloaded directly into the live `assets/manga/` directory. This can cause issues while browsing, such as missing images, layout breaks, or infinite reloads when the site detects partially downloaded content.
+
+Steps to Reproduce:  
+---------------------  
+1. Begin downloading a new chapter directly into `assets/manga/{title}/ch-{chapter}/`.  
+2. Open the reader on that chapter.  
+3. Site reloads repeatedly as files appear incrementally or inconsistently.  
+
+Expected:  
+----------  
+- New chapters are downloaded into a temporary staging directory (e.g., `.tmp_downloads/`).  
+- Only once the download is complete and verified, the folder is moved or copied into `assets/manga/`.  
+- Live site remains stable and unaffected during download operations.  
+
+Actual:  
+---------  
+- Files are downloaded directly into the live directory.  
+- Causes reload loops or broken rendering while downloads are in progress.  
+
+Fix:  
+-----  
+- Modify the download script to target `.tmp_downloads/` initially.  
+- Validate that all expected pages are present (based on API metadata).  
+- Once validated, move the complete folder to `assets/manga/{title}/ch-{chapter}/`.  
+- Clean up temp folders after move to avoid clutter.  
+- Optionally log the operation with timestamp and status.
+
+**Example Workflow:**  
+
+```bash
+→ Downloading Chapter 21 of "Blue Lock"...
+→ Staging to .tmp_downloads/Blue Lock/ch-21/
+→ Download complete: 26 pages
+→ Moving to assets/manga/Blue Lock/ch-21/
+→ Cleanup successful
+[✔] Blue Lock ch-21 ready
+```
+
+Status:
+--------
+Open – Needs implementation in existing chapter download logic. May also require small update to the reader's file access logic if temp files ever become visible.
+
+FEATURE: Simplify local development setup (Node.js & dependencies)
+-----------------------------------------------------------------
+
+Description:
+-------------
+Automate and streamline the process of getting MangaView up and running locally so new contributors can start coding with one command, rather than wrestling with manual installs, PATH tweaks, and execution-policy issues.
+
+Cause:
+-------
+Onboarding requires manually installing Node.js, configuring environment variables, adjusting PowerShell execution policies, or installing Docker—steps that are error-prone and frustrating.
+
+Steps to Reproduce:
+---------------------
+1. Clone the repo.  
+2. Run `npm ci` in a fresh shell.  
+3. Encounter “node not recognized” or “running scripts is disabled” errors.  
+4. Spend time installing/removing/reinstalling Node, updating PATH, tweaking policies, or installing Docker.
+
+Expected:
+----------
+A single `tools/setup-dev.ps1` (or `setup-dev.sh`) call, or a Docker/DevContainer option, to install Node (if missing), configure the environment, and run `npm ci`—so the code “just works.”
+
+Actual:
+---------
+Multiple OS-specific steps are required: download/install Node, add to PATH, enable execution policy, install Docker or Chocolatey, restart shells, etc., before anything builds.
+
+Fix:
+-----
+- Provide a `tools/setup-dev.ps1` (Windows) and `tools/setup-dev.sh` (macOS/Linux) that:
+  1. Installs Node.js LTS if missing.  
+  2. Refreshes the environment.  
+  3. Runs `npm ci`.  
+- Include a `docker-compose.yml` that spins up a Node:22-alpine container, mounts the workspace, and auto-runs `npm ci && npm run dev`.  
+- Add a VS Code Dev Container (`.devcontainer/devcontainer.json`) preconfigured with Node and a post-create command of `npm ci`.
+
+**Example `tools/setup-dev.ps1`:**
+```powershell
+Write-Host "Setting up MangaView dev environment..." -ForegroundColor Cyan
+if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
+  Write-Host "Installing Node.js LTS via Chocolatey..."
+  choco install nodejs-lts -y
+  Write-Host "Refreshing environment..."
+  & refreshenv
+}
+Write-Host "Installing npm packages..."
+npm.cmd ci
+Write-Host "Done! Run `npm run dev` to start the app." -ForegroundColor Green
+```
+
+**Example `docker-compose.yml`:**
+```yaml
+version: "3.8"
+services:
+  dev:
+    image: node:22-alpine
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: sh -c "npm ci && npm run dev"
+    ports:
+      - "3000:3000"
+```
+
+**Example `.devcontainer/devcontainer.json`:**
+```json
+{
+  "name": "MangaView Dev",
+  "image": "node:22-alpine",
+  "workspaceFolder": "/app",
+  "extensions": ["ms-vscode.vscode-node-azure-pack"],
+  "postCreateCommand": "npm ci"
+}
+```
+
+Status:
+--------
+Open – Scripts and container definitions to be added to `tools/`, `.devcontainer/`, and root directory.
+ 
