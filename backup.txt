@@ -1,99 +1,112 @@
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
-const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MangaView</title>
 
-const BASE_DIR = path.join(__dirname, '../assets/manga');
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="/styles/main.css" />
+  <link rel="stylesheet" href="/components/book-card/book-card.css" />
+  <link rel="stylesheet" href="/components/logo/logo.css" />
+</head>
+<body>
 
-function sanitizeTitle(title) {
-  return title.replace(/[^\w\s-]/g, '').replace(/\s+/g, ' ').trim().replace(/ /g, '_');
-}
+  <!-- Site Header with Animated Logo -->
+  <header class="site-header">
+    <a href="/" class="logo-book" aria-label="MangaView">
+      <div class="book">
+        <div class="left-page"></div>
+        <div class="right-page">
+          <div class="flip-page"></div>
+        </div>
+      </div>
+      <span class="logo-text">MangaView</span>
+    </a>
+    <p>Your personal manga library</p>
+  </header>
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+  <!-- Main Book Grid -->
+  <main class="book-grid" id="book-grid">
+    <!-- Cards will be inserted here dynamically -->
+  </main>
 
-async function fetchJsonSafe(url, label = '') {
-  const res = await fetch(url, {
-    headers: {
-      'Accept': 'application/json',
-      'User-Agent': 'MangaView CLI'
-    }
-  });
+<!-- Pagination Controls -->
+<div id="pagination" class="pagination-controls"></div>
 
-  const contentType = res.headers.get('content-type') || '';
-  if (!res.ok || !contentType.includes('application/json')) {
-    const fallback = await res.text();
-    throw new Error(`[${label}] Non-JSON or error response (${res.status}):\n${fallback.slice(0, 200)}`);
-  }
 
-  return res.json();
-}
+  <!-- Scripts -->
+  <script src="/components/book-card/book-card.js" defer></script>
+<script type="module">
+  import { initBookCards, openReader } from '/components/book-card/book-card.js';
 
-// ✅ FIXED: now paginates with limit=100 and offset
-async function getAllChapterIds(mangaUuid) {
-  let chapters = [];
-  let offset = 0;
-  const limit = 100;
+  fetch('/data/manga.json')
+    .then(res => res.json())
+    .then(data => {
+      const itemsPerPage = 25;
+      const urlParams = new URLSearchParams(window.location.search);
+      const currentPage = parseInt(urlParams.get('page')) || 1;
 
-  while (true) {
-    const url = `https://api.mangadex.org/chapter?manga=${mangaUuid}&translatedLanguage[]=en&order[chapter]=asc&limit=${limit}&offset=${offset}`;
-    const json = await fetchJsonSafe(url, 'getAllChapterIds');
+      const start = (currentPage - 1) * itemsPerPage;
+      const end = start + itemsPerPage;
+      const pageItems = data.slice(start, end);
 
-    if (!json.data.length) break;
+      const grid = document.getElementById('book-grid');
+      grid.innerHTML = '';
 
-    chapters.push(...json.data.map(ch => ({
-      id: ch.id,
-      number: ch.attributes.chapter || '0'
-    })));
+      pageItems.forEach((manga, i) => {
+        const card = document.createElement('div');
+        card.className = 'book-card';
+        card.setAttribute('data-slug', manga.slug);
+        card.setAttribute('data-id', manga.id);
+        card.setAttribute('data-ext', manga.coverExt || 'jpg');
+        card.onclick = () => openReader(manga.slug);
 
-    offset += limit;
-    if (offset >= json.total) break;
-  }
+        card.innerHTML = `
+          <div class="book-inner">
+            <div class="book-cover">
+              <img class="manga-cover" alt="${manga.title}" />
+            </div>
+            <div class="book-info">
+              <h3>${manga.title}</h3>
+              <p>By ${manga.authors?.[0] || 'Unknown'}</p>
+            </div>
+          </div>
+        `;
 
-  return chapters;
-}
+        grid.appendChild(card);
 
-async function getMangaTitle(mangaUuid) {
-  const json = await fetchJsonSafe(`https://api.mangadex.org/manga/${mangaUuid}`, 'getMangaTitle');
-  return json.data.attributes.title.en || Object.values(json.data.attributes.title)[0];
-}
+        // Animation delay
+        card.style.animation = 'none';
+        requestAnimationFrame(() => {
+          card.style.animation = 'fadeUp 0.6s ease-out forwards';
+          card.style.animationDelay = `${0.1 * (i + 1)}s`;
+        });
+      });
 
-(async () => {
-  const mangaUuid = process.argv[2];
-  if (!mangaUuid) {
-    console.error('Usage: node tools/batch-download-manga.js <manga-uuid>');
-    process.exit(1);
-  }
+      // Re-initialize 3D tilt + image loading
+      initBookCards();
 
-  try {
-    const title = await getMangaTitle(mangaUuid);
-    const safeTitle = sanitizeTitle(title);
-    const chapterList = await getAllChapterIds(mangaUuid);
+      // Pagination Controls
+      const totalPages = Math.ceil(data.length / itemsPerPage);
+      const pagination = document.getElementById('pagination');
+      pagination.innerHTML = '';
 
-    console.log(`📚 Downloading all chapters of: ${title}`);
-    console.log(`📦 Total chapters found: ${chapterList.length}\n`);
-
-    for (const { id, number } of chapterList) {
-      const chapterPath = path.join(BASE_DIR, safeTitle, `ch-${number}`);
-      if (fs.existsSync(chapterPath)) {
-        console.log(`⏩ Skipping chapter ${number} (already downloaded)`);
-        continue;
+      if (currentPage > 1) {
+        const prev = document.createElement('a');
+        prev.href = `?page=${currentPage - 1}`;
+        prev.textContent = '← Previous';
+        pagination.appendChild(prev);
       }
 
-      try {
-        console.log(`📥 Downloading chapter ${number}`);
-        execSync(`node tools/download-chapter.js ${id}`, { stdio: 'inherit' });
-      } catch (err) {
-        console.warn(`⚠️ Skipped chapter ${number} (${id}) due to error:\n  ${err.message}`);
-        continue;
+      if (currentPage < totalPages) {
+        const next = document.createElement('a');
+        next.href = `?page=${currentPage + 1}`;
+        next.textContent = 'Next →';
+        pagination.appendChild(next);
       }
-
-      await sleep(750); // avoid API hammering
-    }
-
-    console.log('\n✅ Batch download complete.');
-  } catch (err) {
-    console.error('❌ Batch Failed:', err.message);
-  }
-})();
+    })
+    .catch(err => console.error('❌ Failed to load manga.json:', err));
+</script>
+</body>
+</html>

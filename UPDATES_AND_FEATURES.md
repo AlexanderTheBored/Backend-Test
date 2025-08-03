@@ -128,7 +128,7 @@ if (currentPage < totalPages) {
 
 Status:
 --------
-Open – Needs implementation of page logic and UI for navigation.
+Closed – pagination now fully supports 24-item slices per page with top and bottom navigation bars, URL syncing, and mobile/desktop responsiveness. The layout is intentionally kept divisible by common column counts (2, 3, 4) for grid consistency.
 
 FEATURE: Add manga detail page between cover and chapter view
 -------------------------------------------------------------
