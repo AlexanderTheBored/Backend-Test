@@ -1,0 +1,13 @@
+{
+  "name": "mangaview-cli",
+  "version": "1.0.0",
+  "description": "CLI tool to fetch manga metadata and covers from MangaDex",
+  "main": "tools/generate-manga-json.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "echo 'CLI tools removed in this branch — nothing to run.'"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  }
+}
