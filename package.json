@@ -2,12 +2,13 @@
   "name": "mangaview-cli",
   "version": "1.0.0",
   "description": "CLI tool to fetch manga metadata and covers from MangaDex",
-  "main": "server.js",
+  "main": "tools/generate-manga-json.js",
   "type": "commonjs",
   "scripts": {
-    "start": "node server.js"
+    "start": "node tools/generate-manga-json.js"
   },
   "dependencies": {
-    "express": "^4.18.2"
+    "express": "^5.1.0",
+    "node-fetch": "^3.3.2"
   }
 }
