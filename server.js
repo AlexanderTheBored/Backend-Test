@@ -1,18 +1,17 @@
-// server.js
 const express = require('express');
 const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Serve all files statically from the root
+// Serve everything statically
 app.use(express.static(path.join(__dirname)));
 
-// Fallback to index.html for all unmatched routes
+// Make sure fallback route uses a function
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.listen(PORT, () => {
-  console.log(`✅ MangaView running on http://localhost:${PORT}`);
+  console.log(`✅ Server is live on http://localhost:${PORT}`);
 });
