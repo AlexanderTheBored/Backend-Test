@@ -1,0 +1,201 @@
+<!-- File: details.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Manga Details • MangaView</title>
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="/styles/main.css" />
+  <link rel="stylesheet" href="/components/book-card/book-card.css" />
+  <link rel="stylesheet" href="/components/logo/logo.css" />
+
+  <style>
+    html, body {
+      max-width: 100vw;
+      overflow-x: hidden;
+      touch-action: pan-y;
+      background-color: #121212;
+      color: white;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* wrapper matching header color */
+    .detail-container {
+      background-color: #1e1e1e;
+      border-radius: 8px;
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 2rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    /* top: cover + metadata */
+    .detail-top {
+      display: flex;
+      gap: 2rem;
+      align-items: flex-start;
+    }
+    .detail-cover {
+      width: 200px;
+      border-radius: 4px;
+      box-shadow: 2px 4px 12px rgba(0,0,0,0.3);
+    }
+    .detail-meta h1 {
+      margin: 0 0 0.5rem;
+      font-size: 2rem;
+    }
+    .detail-meta p {
+      margin: 0.25rem 0;
+      color: #ccc;
+    }
+
+    /* genre tags */
+    .tag {
+      display: inline-block;
+      background: #2a2a2a;
+      color: #fff;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      margin-right: 0.3rem;
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    /* simple centered chapter list */
+    .chapter-list {
+      list-style: none;
+      padding: 0;
+      margin: 2rem auto 0;
+      max-width: 300px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .chapter-list a {
+      display: block;
+      background: #2a2a2a;
+      color: white;
+      text-decoration: none;
+      padding: 0.75rem;
+      border-radius: 4px;
+      text-align: center;
+      transition: background-color 0.2s;
+    }
+    .chapter-list a:hover {
+      background: #3a3a3a;
+    }
+
+    /* hide pagination if any left over */
+    .nav-bar {
+      display: none;
+    }
+    /* Mobile‐first: detail-top stacks vertically on narrow viewports */
+@media (max-width: 768px) {
+  .detail-top {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .detail-cover {
+    width: 100%;
+    max-width: 300px;
+    margin-bottom: 1rem;
+  }
+
+  .detail-meta h1 {
+    font-size: 1.5rem;
+  }
+
+  .detail-container {
+    padding: 1rem;
+    margin: 1rem auto;
+  }
+
+  /* make chapter list full-width and centered */
+  .chapter-list {
+    max-width: 100%;
+    margin: 1.5rem auto 0;
+  }
+}
+  </style>
+</head>
+<body>
+
+  <!-- header (identical to index.html) -->
+  <header class="site-header">
+    <a href="index.html" class="logo-book" aria-label="MangaView">
+      <div class="book">
+        <div class="left-page"></div>
+        <div class="right-page">
+          <div class="flip-page"></div>
+        </div>
+      </div>
+      <span class="logo-text">MangaView</span>
+    </a>
+    <p>Your personal manga library</p>
+  </header>
+
+  <main class="detail-container">
+    <div class="detail-top">
+      <img id="cover" class="detail-cover" src="" alt="Cover">
+
+      <div class="detail-meta">
+        <h1 id="title">Loading…</h1>
+        <p id="authors"></p>
+        <div id="genres"></div>
+        <p id="description"></p>
+      </div>
+    </div>
+
+    <h2 style="margin-top:2rem; text-align:center;">Chapters</h2>
+    <ul id="chapters" class="chapter-list"></ul>
+  </main>
+
+  <script>
+    (async () => {
+      const params = new URLSearchParams(window.location.search);
+      const slug   = params.get('slug');
+      if (!slug) {
+        document.getElementById('title').textContent = 'Invalid Manga';
+        return;
+      }
+
+      const res = await fetch('/data/manga.json');
+      const list = await res.json();
+      const manga = list.find(m => m.slug === slug);
+      if (!manga) {
+        document.getElementById('title').textContent = 'Manga Not Found';
+        return;
+      }
+
+      // update tab
+      document.title = `${manga.title} • MangaView`;
+
+      // cover & meta
+      document.getElementById('cover').src = `/assets/covers/${manga.id}.${manga.coverExt||'jpg'}`;
+      document.getElementById('cover').alt = manga.title + ' cover';
+      document.getElementById('title').textContent   = manga.title;
+      document.getElementById('authors').textContent = `Authors: ${manga.authors.join(', ')}`;
+      document.getElementById('genres').innerHTML    =
+        (manga.genres||[]).map(g=>`<span class="tag">${g}</span>`).join('');
+      document.getElementById('description').textContent =
+        manga.description || 'No description available.';
+
+      // chapters
+      const chaptersEl = document.getElementById('chapters');
+      chaptersEl.innerHTML = '';
+      const chapters = (manga.chapterFolders || []).map(String).sort((a,b)=>parseFloat(a)-parseFloat(b));
+      chapters.forEach(num => {
+        const a = document.createElement('a');
+        a.href = `/mangareader.html?slug=${slug}&chapter=${num}`;
+        a.textContent = `Chapter ${num}`;
+        chaptersEl.appendChild(a);
+      });
+    })();
+  </script>
+</body>
+</html>

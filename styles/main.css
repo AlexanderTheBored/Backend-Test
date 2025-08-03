@@ -1,3 +1,6 @@
+html {
+  overflow-y: scroll;
+}
 body {
   margin: 0;
   font-family: system-ui, sans-serif;
@@ -85,4 +88,42 @@ body {
   align-items: flex-start;      /* Prevent vertical gaps */
   gap: 2rem;                    /* Even spacing between cards */
   padding: 2rem;
+}
+
+/* ==== book-icon logo ==== */
+.book-icon {
+  width: 2rem;
+  height: 2rem;
+  position: relative;
+}
+
+.book-icon .left-page,
+.book-icon .right-page {
+  position: absolute;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  background-color: #2979ff;
+  border-radius: 0.2rem;
+}
+
+.book-icon .left-page {
+  left: 0;
+  transform-origin: left center;
+}
+
+.book-icon .right-page {
+  right: 0;
+  transform-origin: right center;
+}
+
+.book-icon .flip-page {
+  position: absolute;
+  top: 0;
+  right: 50%;
+  width: 50%;
+  height: 100%;
+  background-color: #1e1e1e;
+  border-radius: 0.2rem;
+  transform: rotateY(20deg);
 }

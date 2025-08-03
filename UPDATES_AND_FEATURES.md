@@ -204,7 +204,7 @@ fetch('/data/manga.json')
 
 Status:
 --------
-Open – Requires creation of `details.html`, update to cover links, and logic for loading metadata.
+Closed – the detail page is now implemented. Clicking a cover leads to a summary page with title, genres, description, and chapter links. The reader can be accessed from this page, providing a better user experience and context before reading.
 
 FEATURE: Add CLI tool to update all manga entries
 --------------------------------------------------

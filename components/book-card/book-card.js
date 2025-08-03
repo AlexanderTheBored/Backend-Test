@@ -64,5 +64,5 @@ export function initBookCards() {
 }
 
 export function openReader(slug) {
-  window.location.href = `/mangareader.html?slug=${slug}`;
+  window.location.href = `/details.html?slug=${slug}`;
 }
