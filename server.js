@@ -4,16 +4,15 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const rootPath = path.join(__dirname, 'Backend test');
+// 👇 This must exactly match your folder: 'Backend-Test'
+const baseDir = path.join(__dirname, 'Backend-Test');
 
-// Serve all static files from the 'Backend test' directory
-app.use(express.static(rootPath));
+app.use(express.static(baseDir));
 
-// Fallback: send index.html on any unmatched route
 app.get('*', (req, res) => {
-  res.sendFile(path.join(rootPath, 'index.html'));
+  res.sendFile(path.join(baseDir, 'index.html'));
 });
 
 app.listen(PORT, () => {
-  console.log(`✅ MangaView server running on http://localhost:${PORT}`);
+  console.log(`✅ MangaView running from /Backend-Test on http://localhost:${PORT}`);
 });
